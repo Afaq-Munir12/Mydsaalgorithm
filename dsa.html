@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSA Universe — Algorithm Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,400&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#040810;--bg2:#07101f;--panel:#0b1422;--border:#0f2040;--border2:#1a3a60;
+  --sort:#f59e0b;--graph:#00e5ff;--search:#a855f7;--tree:#22c55e;
+  --text:#b0c8e8;--muted:#2a4060;--white:#ddeeff;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%,rgba(0,229,255,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(168,85,247,0.04) 0%,transparent 60%),
+    radial-gradient(1px 1px at 15% 25%,rgba(0,229,255,0.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 15%,rgba(168,85,247,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 45% 75%,rgba(245,158,11,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 45%,rgba(34,197,94,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 30% 60%,rgba(0,229,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 90% 70%,rgba(245,158,11,0.3) 0%,transparent 100%);}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,80,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,80,200,0.025) 1px,transparent 1px);
+  background-size:60px 60px;}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:200;background:rgba(4,8,16,0.9);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.nav-logo{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;letter-spacing:3px;
+  background:linear-gradient(90deg,var(--graph),var(--search));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;}
+.nav-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.nav-tab{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;padding:6px 13px;
+  border-radius:3px;border:1px solid transparent;background:transparent;color:var(--muted);
+  cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;}
+.nav-tab:hover{color:var(--text);border-color:var(--border2);}
+.nav-tab.active{color:var(--white);border-color:var(--border2);background:var(--panel);}
+.nav-tab[data-page="race"].active{background:linear-gradient(135deg,rgba(255,64,100,0.15),rgba(0,229,255,0.15));border-color:#ff4060;color:#ff7090;}
+.nav-sep{width:1px;height:20px;background:var(--border2);margin:0 4px;}
+
+/* ── PAGES ── */
+.page{display:none;position:relative;z-index:1;}
+.page.active{display:block;}
+
+/* ── HERO ── */
+.hero{padding:60px 40px 40px;text-align:center;}
+.hero-eye{font-size:0.6rem;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.hero h1{font-family:'Orbitron',monospace;font-size:clamp(1.8rem,5vw,3.6rem);font-weight:900;line-height:1.1;margin-bottom:14px;}
+.hero h1 em{font-style:normal;}
+.hero-sub{color:var(--muted);font-size:0.72rem;max-width:480px;margin:0 auto 30px;line-height:1.9;}
+.stats-row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;}
+.stat-num{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;display:block;}
+.stat-lbl{font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* ── CONTENT ── */
+.content{position:relative;z-index:1;padding:0 28px 60px;}
+.cat-section{margin-bottom:52px;}
+.cat-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.cat-icon{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.cat-title{font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:700;letter-spacing:2px;}
+.cat-desc{font-size:0.62rem;color:var(--muted);margin-top:2px;}
+.cat-count{font-size:0.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;margin-left:auto;letter-spacing:1px;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+
+/* ── ALGO CARD ── */
+.algo-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:all 0.22s;position:relative;overflow:hidden;}
+.algo-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.22s;}
+.algo-card:hover{transform:translateY(-3px);border-color:var(--card-color,#333);}
+.algo-card:hover::before{opacity:1;}
+.algo-card[data-cat="sort"]{--card-color:var(--sort);}
+.algo-card[data-cat="sort"]::before{background:radial-gradient(circle at 0 0,rgba(245,158,11,0.1),transparent 65%);}
+.algo-card[data-cat="graph"]{--card-color:var(--graph);}
+.algo-card[data-cat="graph"]::before{background:radial-gradient(circle at 0 0,rgba(0,229,255,0.1),transparent 65%);}
+.algo-card[data-cat="search"]{--card-color:var(--search);}
+.algo-card[data-cat="search"]::before{background:radial-gradient(circle at 0 0,rgba(168,85,247,0.1),transparent 65%);}
+.algo-card[data-cat="tree"]{--card-color:var(--tree);}
+.algo-card[data-cat="tree"]::before{background:radial-gradient(circle at 0 0,rgba(34,197,94,0.1),transparent 65%);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.card-badge{font-size:0.52rem;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:1px;text-transform:uppercase;}
+.badge-sort{background:rgba(245,158,11,0.15);color:var(--sort);}
+.badge-graph{background:rgba(0,229,255,0.15);color:var(--graph);}
+.badge-search{background:rgba(168,85,247,0.15);color:var(--search);}
+.badge-tree{background:rgba(34,197,94,0.15);color:var(--tree);}
+.card-arrow{font-size:0.7rem;color:var(--muted);transition:all 0.2s;}
+.algo-card:hover .card-arrow{color:var(--card-color,#fff);transform:translate(2px,-2px);}
+.card-name{font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--white);margin-bottom:7px;letter-spacing:0.5px;}
+.card-short{font-size:0.6rem;color:var(--muted);line-height:1.7;margin-bottom:10px;}
+.card-cx{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.cx-pill{font-size:0.52rem;padding:2px 6px;border:1px solid var(--border2);border-radius:2px;color:var(--muted);}
+.cx-pill em{font-style:normal;color:var(--card-color,#aaa);}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap;}
+.tag{font-size:0.5rem;padding:1px 5px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:2px;color:var(--muted);}
+.card-compare-btn{margin-top:10px;width:100%;font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;padding:5px;
+  border-radius:3px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;letter-spacing:1px;transition:all 0.2s;}
+.card-compare-btn:hover{border-color:var(--card-color,#aaa);color:var(--card-color,#fff);}
+.card-compare-btn.selected{background:rgba(255,255,255,0.06);border-color:var(--card-color,#aaa);color:var(--card-color,#fff);}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);z-index:999;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:860px;max-height:92vh;overflow-y:auto;position:relative;animation:mIn 0.28s ease;}
+@keyframes mIn{from{transform:scale(0.93) translateY(16px);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-hdr{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg2);z-index:10;}
+.modal-dot{width:8px;height:8px;border-radius:50%;}
+.modal-title{font-family:'Orbitron',monospace;font-size:0.95rem;font-weight:700;color:var(--white);}
+.modal-close{margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;width:28px;height:28px;border-radius:4px;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.modal-close:hover{color:var(--white);border-color:var(--white);}
+.modal-body{padding:20px;}
+
+/* DEFINITION BLOCK */
+.algo-def{background:var(--panel);border-radius:8px;padding:16px 18px;margin-bottom:18px;border-left:3px solid var(--accent-color,#333);}
+.algo-def h3{font-family:'Orbitron',monospace;font-size:0.72rem;color:var(--accent-color,#fff);margin-bottom:10px;letter-spacing:1px;}
+.algo-def p{font-size:0.68rem;color:var(--text);line-height:1.9;margin-bottom:8px;}
+.algo-def p:last-child{margin-bottom:0;}
+.algo-def .how-it-works{font-size:0.64rem;color:var(--muted);line-height:1.8;font-style:italic;border-top:1px solid var(--border);padding-top:8px;margin-top:8px;}
+.cx-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.cx-card{background:var(--panel);border:1px solid var(--border2);border-radius:5px;padding:8px 12px;font-size:0.62rem;}
+.cx-card .lbl{color:var(--muted);display:block;font-size:0.55rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+.cx-card .val{color:var(--accent-color,#fff);font-weight:700;}
+.use-cases{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.use-case-tag{font-size:0.58rem;padding:3px 9px;border:1px solid var(--border2);border-radius:3px;color:var(--muted);}
+
+/* VIZ */
+.viz-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.viz-hdr{padding:9px 14px;border-bottom:1px solid var(--border);font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.viz-dot{width:6px;height:6px;border-radius:50%;}
+.viz-body{padding:16px;min-height:150px;}
+.viz-ctrls{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.vbtn{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;padding:6px 14px;border-radius:3px;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all 0.16s;}
+.vbtn-p{background:var(--accent-color,#333);color:#000;}
+.vbtn-p:hover{opacity:0.8;}
+.vbtn-s{background:var(--border);color:var(--text);border:1px solid var(--border2);}
+.vbtn-s:hover{background:var(--border2);}
+.vbtn:disabled{opacity:0.3;cursor:not-allowed;}
+.spd-wrap{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:0.58rem;color:var(--muted);}
+.spd-wrap input{accent-color:var(--accent-color,#fff);width:75px;}
+.step-msg{padding:9px 14px;border-top:1px solid var(--border);font-size:0.63rem;color:var(--muted);min-height:34px;}
+.step-msg span{color:var(--white);}
+
+/* ══════════════════════════════════
+   RACE PAGE
+══════════════════════════════════ */
+.race-page{padding:32px 28px 60px;position:relative;z-index:1;}
+.race-hero{text-align:center;margin-bottom:32px;}
+.race-hero h2{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,4vw,2.4rem);font-weight:900;letter-spacing:-1px;
+  background:linear-gradient(90deg,#ff4060,#ff9020,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.race-hero p{color:var(--muted);font-size:0.68rem;line-height:1.8;}
+
+.race-setup{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:24px;}
+.race-setup h3{font-family:'Orbitron',monospace;font-size:0.75rem;color:var(--text);margin-bottom:16px;letter-spacing:1px;}
+.race-cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.rcat-tab{font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:700;padding:5px 12px;border-radius:3px;
+  border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
+.rcat-tab.active{color:var(--white);border-color:var(--white);}
+.rcat-tab[data-rcat="sort"].active{color:var(--sort);border-color:var(--sort);background:rgba(245,158,11,0.08);}
+.rcat-tab[data-rcat="search"].active{color:var(--search);border-color:var(--search);background:rgba(168,85,247,0.08);}
+.rcat-tab[data-rcat="graph"].active{color:var(--graph);border-color:var(--graph);background:rgba(0,229,255,0.08);}
+
+.race-picker{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.picker-side{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:14px;}
+.picker-label{font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:700;}
+.picker-label.a{color:#ff6080;}
+.picker-label.b{color:#00e5ff;}
+.algo-pick-list{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;}
+.algo-pick-list::-webkit-scrollbar{width:3px;}
+.algo-pick-list::-webkit-scrollbar-thumb{background:var(--border2);}
+.pick-item{font-size:0.62rem;padding:6px 10px;border-radius:3px;border:1px solid transparent;cursor:pointer;transition:all 0.18s;color:var(--muted);}
+.pick-item:hover{background:var(--panel);color:var(--text);}
+.pick-item.selected-a{background:rgba(255,64,128,0.1);border-color:#ff4080;color:#ff8090;}
+.pick-item.selected-b{background:rgba(0,229,255,0.1);border-color:var(--graph);color:var(--graph);}
+
+.race-launch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.race-launch-btn{font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:700;padding:11px 28px;border-radius:4px;border:none;cursor:pointer;
+  background:linear-gradient(90deg,#ff4060,#ff9020);color:#fff;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;}
+.race-launch-btn:hover{opacity:0.85;transform:translateY(-2px);}
+.race-launch-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.race-reset-btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;padding:8px 16px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
+.race-reset-btn:hover{color:var(--text);border-color:var(--text);}
+.race-spd{display:flex;align-items:center;gap:7px;font-size:0.6rem;color:var(--muted);margin-left:auto;}
+.race-spd input{accent-color:#ff6080;width:80px;}
+
+/* RACE ARENA */
+.race-arena{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.race-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.3);}
+.racer-side{display:flex;flex-direction:column;gap:5px;}
+.racer-side.r{align-items:flex-end;}
+.racer-name{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;}
+.racer-name.a{color:#ff6080;}
+.racer-name.b{color:var(--graph);}
+.racer-steps{font-size:0.62rem;color:var(--muted);}
+.progress-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;width:100%;}
+.prog-a{height:100%;width:0%;background:linear-gradient(90deg,#aa2040,#ff4060);border-radius:3px;box-shadow:0 0 6px #ff4060;transition:width 0.3s;}
+.prog-b{height:100%;width:0%;background:linear-gradient(90deg,#0077aa,#00e5ff);border-radius:3px;box-shadow:0 0 6px #00e5ff;float:right;transition:width 0.3s;}
+.vs-badge{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:#a78bfa;text-align:center;}
+.winner-strip{display:none;text-align:center;padding:10px;font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:900;letter-spacing:1px;animation:flashIn 0.4s ease;}
+@keyframes flashIn{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+.win-a{background:rgba(255,64,128,0.15);border-bottom:1px solid #ff4060;color:#ff6080;}
+.win-b{background:rgba(0,229,255,0.15);border-bottom:1px solid #00e5ff;color:#00e5ff;}
+.win-tie{background:rgba(167,139,250,0.15);border-bottom:1px solid #a78bfa;color:#a78bfa;}
+
+.race-canvases{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.race-panel{border-right:1px solid var(--border);}
+.race-panel:last-child{border-right:none;}
+.race-panel-hdr{padding:8px 12px;font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.race-panel-hdr.a{color:#ff6080;}
+.race-panel-hdr.b{color:var(--graph);}
+canvas.race-cv{display:block;width:100%;background:var(--bg);}
+.race-order{padding:7px 12px;min-height:36px;border-top:1px solid var(--border);font-size:0.58rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:3px;align-items:center;}
+.rnode{width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:#000;animation:pop 0.2s ease;}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.rnode-a{background:rgba(255,96,128,0.85);}
+.rnode-b{background:rgba(0,229,255,0.85);}
+.race-log{padding:8px 12px;border-top:1px solid var(--border);min-height:28px;font-size:0.58rem;color:var(--muted);}
+
+/* COMPARISON TABLE */
+.cmp-table{margin-top:24px;background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.cmp-table h3{padding:12px 16px;font-family:'Orbitron',monospace;font-size:0.72rem;color:var(--text);border-bottom:1px solid var(--border);letter-spacing:1px;}
+.cmp-grid{display:grid;grid-template-columns:repeat(5,1fr);border-top:none;}
+.cmp-cell{padding:9px 12px;font-size:0.6rem;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
+.cmp-cell:last-child{border-right:none;}
+.cmp-cell.hdr{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-size:0.55rem;background:rgba(0,0,0,0.3);}
+.cmp-cell.name{font-family:'Orbitron',monospace;font-size:0.6rem;color:var(--white);}
+.cmp-cell.a-row{background:rgba(255,64,128,0.04);}
+.cmp-cell.b-row{background:rgba(0,229,255,0.04);}
+.better{color:#22c55e;}
+.worse{color:#ef4444;}
+.same{color:var(--muted);}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+@media(max-width:640px){
+  .nav{padding:10px 14px;}
+  .hero,.race-page{padding:30px 14px 40px;}
+  .content{padding:0 12px 40px;}
+  .cards-grid{grid-template-columns:1fr 1fr;}
+  .race-picker,.race-canvases,.cmp-grid{grid-template-columns:1fr;}
+  .race-scoreboard{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">DSA∞</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="home" onclick="showPage('home')">Dashboard</button>
+    <div class="nav-sep"></div>
+    <button class="nav-tab" data-page="sort" onclick="showPage('sort')">Sorting</button>
+    <button class="nav-tab" data-page="graph" onclick="showPage('graph')">Graph</button>
+    <button class="nav-tab" data-page="search" onclick="showPage('search')">Search</button>
+    <button class="nav-tab" data-page="tree" onclick="showPage('tree')">Trees</button>
+    <div class="nav-sep"></div>
+    <button class="nav-tab" data-page="race" onclick="showPage('race')">⚔ Race</button>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-eye">// interactive algorithm encyclopedia</div>
+    <h1><em style="color:var(--graph)">DATA</em> <em style="color:var(--sort)">STRUCTURES</em><br><em style="color:var(--search)">&amp;</em> <em style="color:var(--tree)">ALGORITHMS</em></h1>
+    <p class="hero-sub">Click any algorithm for animated step-by-step visualization with full explanation. Race algorithms head-to-head in the ⚔ Race tab.</p>
+    <div class="stats-row">
+      <div><span class="stat-num" style="color:var(--sort)">6</span><span class="stat-lbl">Sorting</span></div>
+      <div><span class="stat-num" style="color:var(--graph)">5</span><span class="stat-lbl">Graph</span></div>
+      <div><span class="stat-num" style="color:var(--search)">4</span><span class="stat-lbl">Searching</span></div>
+      <div><span class="stat-num" style="color:var(--tree)">4</span><span class="stat-lbl">Trees</span></div>
+    </div>
+  </div>
+  <div class="content" id="home-content"></div>
+</div>
+
+<!-- CATEGORY PAGES -->
+<div class="page" id="page-sort"><div class="content" id="sort-content" style="padding-top:28px"></div></div>
+<div class="page" id="page-graph"><div class="content" id="graph-content" style="padding-top:28px"></div></div>
+<div class="page" id="page-search"><div class="content" id="search-content" style="padding-top:28px"></div></div>
+<div class="page" id="page-tree"><div class="content" id="tree-content" style="padding-top:28px"></div></div>
+
+<!-- RACE PAGE -->
+<div class="page" id="page-race">
+  <div class="race-page">
+    <div class="race-hero">
+      <h2>⚔ ALGORITHM RACE</h2>
+      <p>Pick two algorithms from the same category and watch them compete side-by-side.<br>See which finishes first and compare their behaviour in real time.</p>
+    </div>
+
+    <div class="race-setup">
+      <h3>// SELECT CATEGORY &amp; ALGORITHMS</h3>
+      <div class="race-cat-tabs">
+        <button class="rcat-tab active" data-rcat="sort" onclick="setRaceCat('sort')">Sorting</button>
+        <button class="rcat-tab" data-rcat="search" onclick="setRaceCat('search')">Searching</button>
+        <button class="rcat-tab" data-rcat="graph" onclick="setRaceCat('graph')">Graph</button>
+      </div>
+      <div class="race-picker">
+        <div class="picker-side">
+          <div class="picker-label a">▲ Algorithm A (Red)</div>
+          <div class="algo-pick-list" id="pickA"></div>
+        </div>
+        <div class="picker-side">
+          <div class="picker-label b">▲ Algorithm B (Cyan)</div>
+          <div class="algo-pick-list" id="pickB"></div>
+        </div>
+      </div>
+      <div class="race-launch">
+        <button class="race-launch-btn" id="raceLaunchBtn" onclick="launchRace()">▶▶ START RACE</button>
+        <button class="race-reset-btn" onclick="resetRace()">↺ Reset</button>
+        <div class="race-spd">Slow<input type="range" id="raceSpd" min="80" max="900" value="500">Fast</div>
+      </div>
+    </div>
+
+    <!-- ARENA -->
+    <div class="race-arena" id="raceArena">
+      <div class="race-scoreboard">
+        <div class="racer-side">
+          <div class="racer-name a" id="racerNameA">—</div>
+          <div class="racer-steps" id="racerStepsA">0 steps</div>
+          <div class="progress-track"><div class="prog-a" id="progA"></div></div>
+        </div>
+        <div class="vs-badge">VS</div>
+        <div class="racer-side r">
+          <div class="racer-name b" id="racerNameB">—</div>
+          <div class="racer-steps" id="racerStepsB">0 steps</div>
+          <div class="progress-track"><div class="prog-b" id="progB"></div></div>
+        </div>
+      </div>
+      <div class="winner-strip" id="winnerStrip"></div>
+      <div class="race-canvases">
+        <div class="race-panel">
+          <div class="race-panel-hdr a"><div class="viz-dot" style="background:#ff6080"></div><span id="rPanelA">Algorithm A</span></div>
+          <canvas class="race-cv" id="rcvA" height="180"></canvas>
+          <div class="race-order" id="rorderA"></div>
+          <div class="race-log" id="rlogA">—</div>
+        </div>
+        <div class="race-panel">
+          <div class="race-panel-hdr b"><div class="viz-dot" style="background:var(--graph)"></div><span id="rPanelB">Algorithm B</span></div>
+          <canvas class="race-cv" id="rcvB" height="180"></canvas>
+          <div class="race-order" id="rorderB"></div>
+          <div class="race-log" id="rlogB">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmp-table" id="cmpTable" style="display:none">
+      <h3>// COMPARISON BREAKDOWN</h3>
+      <div class="cmp-grid" id="cmpGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOut(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hdr">
+      <div class="modal-dot" id="mDot"></div>
+      <div class="modal-title" id="mTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// ALGORITHM DATABASE
+// ══════════════════════════════════════════════
+const ALGOS = {
+  sort:[
+    {id:'bubble',name:'Bubble Sort',short:'Repeatedly swaps adjacent out-of-order pairs. Bubbles max to end each pass.',
+     def:`Bubble Sort is one of the simplest sorting algorithms. It works by repeatedly stepping through the list, comparing adjacent elements, and swapping them if they are in the wrong order. This process is repeated until no swaps are needed, which means the list is sorted.`,
+     how:`Each full pass through the array "bubbles" the largest unsorted element to its correct position at the end. After k passes, the last k elements are in their final sorted positions. The algorithm stops early if a pass makes no swaps (optimized version).`,
+     time:'O(n²)',best:'O(n)',space:'O(1)',stable:'Yes',uses:['Education','Small datasets','Nearly sorted data']},
+    {id:'selection',name:'Selection Sort',short:'Finds minimum in unsorted part, places it at start. Exactly n-1 swaps.',
+     def:`Selection Sort divides the array into a sorted and an unsorted part. In each iteration, it finds the minimum (or maximum) element in the unsorted part and swaps it into the correct position at the boundary.`,
+     how:`Start with the full array as unsorted. Find the smallest element, swap it to position 0. Now position 0 is sorted. Find the next smallest in positions 1..n-1, swap to position 1. Repeat n-1 times. It always performs exactly n-1 swaps regardless of input — ideal when writes are expensive.`,
+     time:'O(n²)',best:'O(n²)',space:'O(1)',stable:'No',uses:['Minimal swaps needed','Small arrays','When memory writes are costly']},
+    {id:'insertion',name:'Insertion Sort',short:'Inserts each element into its correct position in the sorted prefix.',
+     def:`Insertion Sort builds the sorted array one element at a time by taking each new element and inserting it into its correct position among the already-sorted elements. It works like sorting a hand of playing cards.`,
+     how:`Assume position 0 is sorted. Take element at position 1, compare it backwards through the sorted portion, shifting larger elements right until you find the right spot. Repeat for positions 2, 3, ... n-1. Extremely efficient for nearly-sorted data and small arrays.`,
+     time:'O(n²)',best:'O(n)',space:'O(1)',stable:'Yes',uses:['Nearly sorted data','Online sorting (stream)','Small datasets','Hybrid algorithms']},
+    {id:'merge',name:'Merge Sort',short:'Divide array in halves, sort each recursively, merge the sorted halves.',
+     def:`Merge Sort is a classic divide-and-conquer algorithm. It recursively splits the array into halves until each sub-array has one element, then merges the sub-arrays back together in sorted order. It guarantees O(n log n) performance in all cases.`,
+     how:`Split array at midpoint → recursively sort left half → recursively sort right half → merge the two sorted halves into one sorted array. The merge step compares elements from both halves one by one, picking the smaller. Uses O(n) extra space for the merge buffer.`,
+     time:'O(n log n)',best:'O(n log n)',space:'O(n)',stable:'Yes',uses:['Large datasets','Linked lists','External sorting','Guaranteed O(n log n)']},
+    {id:'quick',name:'Quick Sort',short:'Pick a pivot, partition around it, recursively sort both sides.',
+     def:`Quick Sort is a highly efficient, in-place sorting algorithm. It picks a "pivot" element and partitions the array so elements smaller than the pivot are on the left and larger elements are on the right. It then recursively sorts both partitions.`,
+     how:`Choose pivot (last element here). Scan left to right: if element ≤ pivot, swap it to the left partition. After scanning, place the pivot at its final sorted position. Recursively apply to left and right sub-arrays. Average case is O(n log n) but worst case is O(n²) with bad pivot selection.`,
+     time:'O(n log n)',best:'O(n log n)',space:'O(log n)',stable:'No',uses:['General purpose','In-memory sorting','Cache-friendly access','Most language standard libs']},
+    {id:'heap',name:'Heap Sort',short:'Build max-heap, extract maximum repeatedly to sort in-place.',
+     def:`Heap Sort uses a binary heap data structure to sort elements. First it builds a max-heap from the array, then repeatedly extracts the maximum element (root) and places it at the end, reducing the heap size by one each time.`,
+     how:`Phase 1 (Build heap): Convert array into a max-heap using heapify from bottom-up — O(n). Phase 2 (Extract): Swap root (max) with last element, reduce heap size, call heapify on root to restore heap property. Repeat n-1 times. Result: sorted array. Guaranteed O(n log n) with O(1) extra space.`,
+     time:'O(n log n)',best:'O(n log n)',space:'O(1)',stable:'No',uses:['Guaranteed O(n log n)','O(1) extra space','Priority queues','Real-time systems']},
+  ],
+  graph:[
+    {id:'bfs',name:'BFS',short:'Explore all neighbors at current depth before going deeper. Uses Queue.',
+     def:`Breadth-First Search (BFS) explores a graph level by level, starting from a source node. It visits all neighbors of the current node before moving to the next level. BFS is guaranteed to find the shortest path (fewest edges) in an unweighted graph.`,
+     how:`Start: add source to a queue and mark visited. Loop: dequeue front node, process it, enqueue all unvisited neighbors. Repeat until queue is empty. The key insight is FIFO — nodes closer to the source are processed before farther ones, naturally exploring in "rings" of increasing distance.`,
+     time:'O(V+E)',best:'O(V+E)',space:'O(V)',stable:'-',uses:['Shortest path (unweighted)','Level-order traversal','Social network connections','Web crawling']},
+    {id:'dfs',name:'DFS',short:'Dive as deep as possible before backtracking. Uses Stack (or recursion).',
+     def:`Depth-First Search (DFS) explores a graph by going as deep as possible along each branch before backtracking. It can be implemented with an explicit stack or recursion. DFS is the foundation for many advanced graph algorithms.`,
+     how:`Start: push source to stack. Loop: pop node, if unvisited → mark and process it, push all unvisited neighbors. The LIFO order means we dive deep into one path before trying others. Unlike BFS, DFS does NOT guarantee shortest path but uses less memory for deep graphs.`,
+     time:'O(V+E)',best:'O(V+E)',space:'O(V)',stable:'-',uses:['Cycle detection','Topological sort','Maze solving','Connected components','Path finding']},
+    {id:'dijkstra',name:"Dijkstra's",short:'Shortest paths from source in weighted graph. Uses a priority queue.',
+     def:`Dijkstra's algorithm finds the shortest path from a source node to all other nodes in a weighted graph with non-negative edge weights. It is a greedy algorithm that always processes the node with the currently known smallest distance.`,
+     how:`Initialize distances: source=0, all others=∞. Use a min-priority queue. Repeatedly extract the node with minimum distance, then "relax" all its edges: if dist[u] + weight(u,v) < dist[v], update dist[v]. Greedy choice: once a node is extracted it has its final shortest distance.`,
+     time:'O((V+E)logV)',best:'O((V+E)logV)',space:'O(V)',stable:'-',uses:['GPS navigation','Network routing','Maps (Google Maps)','Weighted shortest path']},
+    {id:'topo',name:'Topological Sort',short:'Linear ordering of a DAG so every edge u→v has u before v.',
+     def:`Topological Sort produces a linear ordering of vertices in a Directed Acyclic Graph (DAG) such that for every directed edge u → v, vertex u appears before v. It only applies to DAGs (no cycles). Used heavily in task scheduling and dependency resolution.`,
+     how:`Track in-degrees (number of incoming edges) for all nodes. Add all zero-in-degree nodes to a queue. Dequeue a node, add to result, then decrement in-degree of all its neighbors. If a neighbor's in-degree becomes 0, add it to the queue. Repeat. This is Kahn's algorithm — O(V+E).`,
+     time:'O(V+E)',best:'O(V+E)',space:'O(V)',stable:'-',uses:['Build systems (make)','Course prerequisites','Compiler dependency','Task scheduling']},
+    {id:'kruskal',name:"Kruskal's MST",short:'Sort edges by weight, greedily add edges that do not form a cycle.',
+     def:`Kruskal's algorithm finds the Minimum Spanning Tree (MST) — a subset of edges that connects all vertices with the minimum total weight and no cycles. It uses a greedy approach: always pick the cheapest available edge that doesn't create a cycle.`,
+     how:`Sort all edges by weight. Use Union-Find (disjoint set) data structure to track connected components. For each edge (u,v) in sorted order: if find(u) ≠ find(v) (they're in different components), add edge to MST and union their components. Stop when MST has V-1 edges.`,
+     time:'O(E log E)',best:'O(E log E)',space:'O(V)',stable:'-',uses:['Network design','Cluster analysis','Image segmentation','Circuit design']},
+  ],
+  search:[
+    {id:'linear',name:'Linear Search',short:'Check each element one by one from start to end.',
+     def:`Linear Search is the simplest search algorithm. It sequentially checks each element of the array until a match is found or the end is reached. It works on both sorted and unsorted arrays and requires no preprocessing.`,
+     how:`Start at index 0. Compare current element with target. If match → found! Otherwise move to next element. Continue until found or array exhausted. O(n) in worst case — must scan the entire array. Despite being slow, it's the only option for unsorted data.`,
+     time:'O(n)',best:'O(1)',space:'O(1)',stable:'-',uses:['Unsorted arrays','Small datasets','First occurrence finding','Simple lookups']},
+    {id:'binary',name:'Binary Search',short:'Halve the search space repeatedly. Requires sorted array.',
+     def:`Binary Search is a fast algorithm that works on sorted arrays by repeatedly halving the search space. It compares the target with the middle element and eliminates half the remaining elements based on the comparison result.`,
+     how:`Set lo=0, hi=n-1. Find mid=(lo+hi)/2. If arr[mid]==target → found! If arr[mid] < target → target must be in right half → lo=mid+1. If arr[mid] > target → target in left half → hi=mid-1. Repeat. Each iteration eliminates half the search space → O(log n).`,
+     time:'O(log n)',best:'O(1)',space:'O(1)',stable:'-',uses:['Sorted arrays','Database indexing','Finding boundaries','Dictionary lookup']},
+    {id:'jump',name:'Jump Search',short:'Jump fixed steps to find block, then linear search within block.',
+     def:`Jump Search works on sorted arrays by jumping ahead by a fixed step (√n) to find a block where the target might exist, then doing a backward linear search within that block. It sits between linear and binary search in complexity.`,
+     how:`Jump step = √n. Jump ahead by step until arr[pos] ≥ target or end of array. Then do linear search backward from the previous jump position to current position. Best step size is √n giving O(√n) complexity — better than linear O(n) but simpler than binary O(log n).`,
+     time:'O(√n)',best:'O(1)',space:'O(1)',stable:'-',uses:['Sorted arrays','When backward traversal is costly','Block-based structures']},
+    {id:'interpolation',name:'Interpolation',short:'Estimate position using value distribution. Beats binary for uniform data.',
+     def:`Interpolation Search improves upon Binary Search for uniformly distributed sorted arrays. Instead of always checking the middle, it uses a formula to estimate where the target value is likely to be — similar to how you'd open a dictionary near the letter you're looking for.`,
+     how:`pos = lo + ((target - arr[lo]) * (hi - lo)) / (arr[hi] - arr[lo]). This formula estimates the target's position proportionally. If arr[pos] == target → found! If < target → lo = pos+1. If > target → hi = pos-1. Achieves O(log log n) for uniform distributions vs O(log n) for binary.`,
+     time:'O(log log n)',best:'O(1)',space:'O(1)',stable:'-',uses:['Uniformly distributed sorted data','Phone books','Numeric datasets','Large sorted files']},
+  ],
+  tree:[
+    {id:'bst',name:'BST Insert',short:'Insert maintaining: left < parent < right at every node.',
+     def:`A Binary Search Tree (BST) is a binary tree where every node satisfies: all values in the left subtree are less than the node's value, and all values in the right subtree are greater. Insertion places a new node by traversing from root to the correct leaf position.`,
+     how:`Start at root. If new value < current node → go left. If > current node → go right. If child is null → insert here. The resulting tree allows O(log n) search, insert, and delete on average. Worst case O(n) if tree becomes unbalanced (like inserting sorted data).`,
+     time:'O(log n)',best:'O(log n)',space:'O(1)',stable:'-',uses:['Dynamic sorted data','Range queries','Symbol tables','File systems']},
+    {id:'inorder',name:'Inorder Traversal',short:'Left → Root → Right. Produces sorted output for BSTs.',
+     def:`Inorder traversal visits nodes of a binary tree in Left → Root → Right order. For a Binary Search Tree, inorder traversal visits nodes in ascending sorted order — a key property that makes it useful for extracting sorted data from a BST.`,
+     how:`Recursively: (1) Traverse left subtree inorder, (2) Visit current node (process/print), (3) Traverse right subtree inorder. Base case: null node → return. This visits exactly n nodes and traverses n-1 edges → O(n). Stack space is O(h) where h is tree height.`,
+     time:'O(n)',best:'O(n)',space:'O(h)',stable:'-',uses:['Sorted output from BST','Expression tree evaluation','BST validation','Copying a BST']},
+    {id:'levelorder',name:'Level Order',short:'Visit nodes level by level top to bottom. BFS on trees.',
+     def:`Level Order traversal (also called BFS for trees) visits all nodes level by level, from top to bottom and left to right within each level. It uses a queue just like BFS on graphs and is essential for problems involving tree levels or depths.`,
+     how:`Enqueue root. While queue is not empty: dequeue front node, process it, enqueue its left child (if exists), enqueue its right child (if exists). The FIFO queue ensures all nodes at depth d are processed before any node at depth d+1. O(n) time and O(n) space for the queue.`,
+     time:'O(n)',best:'O(n)',space:'O(n)',stable:'-',uses:['Finding nodes by depth','Serializing trees','Minimum depth','Zigzag traversal']},
+    {id:'heap_tree',name:'Max Heap Insert',short:'Insert at end, bubble up to restore heap property.',
+     def:`A Max Heap is a complete binary tree where every parent node is greater than or equal to its children. It is the backing structure for Heap Sort and priority queues. The root always contains the maximum element. Insertion adds at the end and "bubbles up."`,
+     how:`To insert: append new value at end of array (last level, leftmost open spot). Then "bubble up": compare with parent, if larger → swap. Repeat until parent is larger or root is reached. This restores the heap property in O(log n) time. Extract-max removes root, replaces with last element, then "sifts down."`,
+     time:'O(log n)',best:'O(1)',space:'O(1)',stable:'-',uses:['Priority queues','Heap Sort','Scheduling','Dijkstra / Prim']},
+  ],
+};
+
+const CAT_COLOR={sort:'#f59e0b',graph:'#00e5ff',search:'#a855f7',tree:'#22c55e'};
+const CAT_LABEL={sort:'SORTING',graph:'GRAPH',search:'SEARCHING',tree:'TREES'};
+const CAT_DESC={
+  sort:'Algorithms that rearrange elements into a defined order.',
+  graph:'Algorithms that traverse or analyze graph structures.',
+  search:'Algorithms that locate specific elements within a dataset.',
+  tree:'Operations and traversals on hierarchical tree structures.',
+};
+
+let vizTimer=null;
+
+// ══════════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════════
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelector(`.nav-tab[data-page="${p}"]`).classList.add('active');
+  clearInterval(vizTimer);
+}
+
+// ══════════════════════════════════════════════
+// BUILD CARDS
+// ══════════════════════════════════════════════
+function buildAllCards(){
+  const cats=['sort','graph','search','tree'];
+  // Home: all categories
+  const homeContent=document.getElementById('home-content');
+  cats.forEach(cat=>homeContent.appendChild(buildCatSection(cat,true)));
+  // Per-cat pages
+  cats.forEach(cat=>{
+    const pg=document.getElementById(cat+'-content');
+    pg.appendChild(buildCatSection(cat,false));
+  });
+}
+
+function buildCatSection(cat,compact){
+  const color=CAT_COLOR[cat];
+  const sec=document.createElement('div');sec.className='cat-section';
+  const algos=ALGOS[cat];
+  sec.innerHTML=`
+    <div class="cat-header">
+      <div class="cat-icon" style="background:${color}18;color:${color}">${{sort:'⇅',graph:'◈',search:'⌕',tree:'⌥'}[cat]}</div>
+      <div><div class="cat-title" style="color:${color}">${CAT_LABEL[cat]}</div><div class="cat-desc">${CAT_DESC[cat]}</div></div>
+      <span class="cat-count">${algos.length} ALGOS</span>
+    </div>
+    <div class="cards-grid" id="grid-${cat}-${compact?'home':'page'}"></div>`;
+  const grid=sec.querySelector(`[id^="grid-${cat}"]`);
+  algos.forEach(algo=>{
+    const card=document.createElement('div');
+    card.className='algo-card';card.dataset.cat=cat;
+    card.innerHTML=`
+      <div class="card-top"><span class="card-badge badge-${cat}">${cat}</span><span class="card-arrow">↗</span></div>
+      <div class="card-name">${algo.name}</div>
+      <div class="card-short">${algo.short}</div>
+      <div class="card-cx">
+        <span class="cx-pill">⏱ <em>${algo.time}</em></span>
+        <span class="cx-pill">💾 <em>${algo.space}</em></span>
+        ${algo.stable!=='-'?`<span class="cx-pill">Stable: <em>${algo.stable}</em></span>`:''}
+      </div>
+      <div class="card-tags">${(algo.uses||[]).slice(0,3).map(u=>`<span class="tag">${u}</span>`).join('')}</div>`;
+    card.onclick=()=>openModal(cat,algo);
+    grid.appendChild(card);
+  });
+  return sec;
+}
+
+// ══════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════
+function openModal(cat,algo){
+  clearInterval(vizTimer);
+  const color=CAT_COLOR[cat];
+  document.documentElement.style.setProperty('--accent-color',color);
+  document.getElementById('mDot').style.background=color;
+  document.getElementById('mTitle').textContent=algo.name.toUpperCase()+' — '+CAT_LABEL[cat];
+  const body=document.getElementById('mBody');
+  body.innerHTML=`
+    <div class="algo-def" style="border-color:${color}">
+      <h3>// WHAT IS ${algo.name.toUpperCase()}?</h3>
+      <p>${algo.def}</p>
+      <p class="how-it-works">⚙ How it works: ${algo.how}</p>
+    </div>
+    <div class="cx-row">
+      <div class="cx-card"><span class="lbl">Avg Time</span><span class="val">${algo.time}</span></div>
+      <div class="cx-card"><span class="lbl">Best Time</span><span class="val">${algo.best}</span></div>
+      <div class="cx-card"><span class="lbl">Space</span><span class="val">${algo.space}</span></div>
+      ${algo.stable!=='-'?`<div class="cx-card"><span class="lbl">Stable</span><span class="val">${algo.stable}</span></div>`:''}
+    </div>
+    <div class="use-cases">${(algo.uses||[]).map(u=>`<span class="use-case-tag">✓ ${u}</span>`).join('')}</div>
+    <div class="viz-box">
+      <div class="viz-hdr"><div class="viz-dot" style="background:${color}"></div> LIVE ANIMATION</div>
+      <div class="viz-body" id="vizBody"></div>
+      <div class="viz-ctrls" id="vizCtrls"></div>
+      <div class="step-msg" id="stepMsg">Press ▶ Play to start the animation.</div>
+    </div>`;
+  setupViz(cat,algo.id,color);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){clearInterval(vizTimer);document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
+function closeModalOut(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
+
+// ══════════════════════════════════════════════
+// VISUALIZATION ENGINE
+// ══════════════════════════════════════════════
+function setupViz(cat,id,color){
+  const body=document.getElementById('vizBody'),ctrls=document.getElementById('vizCtrls');
+  body.innerHTML='';ctrls.innerHTML='';
+  document.getElementById('stepMsg').textContent='Press ▶ Play to start.';
+  if(cat==='sort')setupSortViz(id,color,'vizBody','vizCtrls','stepMsg','sortCV');
+  else if(cat==='graph')setupGraphViz(id,color,'vizBody','vizCtrls','stepMsg','graphCV');
+  else if(cat==='search')setupSearchViz(id,color,'vizBody','vizCtrls','stepMsg','searchCV');
+  else if(cat==='tree')setupTreeViz(id,color,'vizBody','vizCtrls','stepMsg','treeCV');
+}
+
+// helper: make canvas
+function mkCanvas(bodyId,cvId,h){
+  const cv=document.createElement('canvas');cv.id=cvId;cv.height=h;cv.style.width='100%';cv.style.display='block';
+  document.getElementById(bodyId).appendChild(cv);return cv;
+}
+// helper: standard controls
+function mkCtrls(ctrlsId,msgId,state,drawFn,labelFn,speedId){
+  const d=document.getElementById(ctrlsId);
+  d.innerHTML=`<button class="vbtn vbtn-p" id="${ctrlsId}play" onclick="${ctrlsId}play()">▶ Play</button>
+    <button class="vbtn vbtn-s" onclick="${ctrlsId}prev()">◀</button>
+    <button class="vbtn vbtn-s" onclick="${ctrlsId}next()">▶</button>
+    <button class="vbtn vbtn-s" onclick="${ctrlsId}rst()">↺</button>
+    <div class="spd-wrap">Slow<input type="range" id="${speedId}" min="60" max="900" value="500">Fast</div>`;
+  window[ctrlsId+'play']=function(){state.playing=!state.playing;document.getElementById(ctrlsId+'play').textContent=state.playing?'⏸ Pause':'▶ Play';if(state.playing)runLoop(state,drawFn,labelFn,ctrlsId,msgId,speedId);};
+  window[ctrlsId+'prev']=function(){state.idx=Math.max(0,state.idx-1);drawFn(state.idx);document.getElementById(msgId).innerHTML=labelFn(state.idx);};
+  window[ctrlsId+'next']=function(){state.idx=Math.min(state.steps.length-1,state.idx+1);drawFn(state.idx);document.getElementById(msgId).innerHTML=labelFn(state.idx);};
+  window[ctrlsId+'rst']=function(){clearInterval(vizTimer);state.playing=false;state.idx=0;document.getElementById(ctrlsId+'play').textContent='▶ Play';drawFn(0);document.getElementById(msgId).innerHTML=labelFn(0);};
+}
+function runLoop(state,drawFn,labelFn,ctrlsId,msgId,speedId){
+  if(!state.playing)return;
+  const spd=1000-(document.getElementById(speedId)?+document.getElementById(speedId).value:500);
+  vizTimer=setTimeout(()=>{
+    if(state.idx<state.steps.length-1){state.idx++;drawFn(state.idx);document.getElementById(msgId).innerHTML=labelFn(state.idx);runLoop(state,drawFn,labelFn,ctrlsId,msgId,speedId);}
+    else{state.playing=false;if(document.getElementById(ctrlsId+'play'))document.getElementById(ctrlsId+'play').textContent='▶ Play';document.getElementById(msgId).innerHTML=`<span style="color:#22c55e">✓ Complete! ${state.steps.length} steps.</span>`;}
+  },spd);
+}
+
+// ── SORT VIZ ──
+function genSortSteps(id,arr){
+  const A=[...arr],s=[];
+  if(id==='bubble'){for(let i=0;i<A.length-1;i++)for(let j=0;j<A.length-i-1;j++){s.push({a:[...A],cmp:[j,j+1],sw:false,done:[]});if(A[j]>A[j+1]){[A[j],A[j+1]]=[A[j+1],A[j]];s.push({a:[...A],cmp:[j,j+1],sw:true,done:[]});}}}
+  else if(id==='selection'){for(let i=0;i<A.length-1;i++){let mi=i;for(let j=i+1;j<A.length;j++){s.push({a:[...A],cmp:[mi,j],sw:false,done:Array.from({length:i},(_,k)=>k)});if(A[j]<A[mi])mi=j;}if(mi!==i){[A[i],A[mi]]=[A[mi],A[i]];s.push({a:[...A],cmp:[i,mi],sw:true,done:Array.from({length:i},(_,k)=>k)});}}}
+  else if(id==='insertion'){for(let i=1;i<A.length;i++){let j=i;while(j>0&&A[j-1]>A[j]){s.push({a:[...A],cmp:[j-1,j],sw:true,done:[]});[A[j-1],A[j]]=[A[j],A[j-1]];j--;}}}
+  else if(id==='merge'){function ms(a,l,r){if(l>=r)return;const m=Math.floor((l+r)/2);ms(a,l,m);ms(a,m+1,r);const L=a.slice(l,m+1),R=a.slice(m+1,r+1);let i=0,j=0,k=l;while(i<L.length&&j<R.length){s.push({a:[...a],cmp:[l+i,m+1+j],sw:false,done:[]});if(L[i]<=R[j])a[k++]=L[i++];else a[k++]=R[j++];s.push({a:[...a],cmp:[k-1],sw:true,done:[]});}while(i<L.length)a[k++]=L[i++];while(j<R.length)a[k++]=R[j++];}ms(A,0,A.length-1);}
+  else if(id==='quick'){function qs(a,lo,hi){if(lo>=hi)return;let p=a[hi],i=lo;for(let j=lo;j<hi;j++){s.push({a:[...a],cmp:[j,hi],sw:false,done:[]});if(a[j]<=p){[a[i],a[j]]=[a[j],a[i]];i++;}}[a[i],a[hi]]=[a[hi],a[i]];s.push({a:[...a],cmp:[i],sw:true,done:[]});qs(a,lo,i-1);qs(a,i+1,hi);}qs(A,0,A.length-1);}
+  else if(id==='heap'){function hf(a,n,i){let lg=i,l=2*i+1,r=2*i+2;s.push({a:[...a],cmp:[i,l<n?l:i],sw:false,done:[]});if(l<n&&a[l]>a[lg])lg=l;if(r<n&&a[r]>a[lg])lg=r;if(lg!==i){[a[i],a[lg]]=[a[lg],a[i]];s.push({a:[...a],cmp:[i,lg],sw:true,done:[]});hf(a,n,lg);}}for(let i=Math.floor(A.length/2)-1;i>=0;i--)hf(A,A.length,i);for(let i=A.length-1;i>0;i--){[A[0],A[i]]=[A[i],A[0]];s.push({a:[...A],cmp:[0,i],sw:true,done:Array.from({length:A.length-i},(_,k)=>A.length-1-k)});hf(A,i,0);}}
+  s.push({a:[...A],cmp:[],sw:false,done:Array.from({length:A.length},(_,i)=>i),finished:true});
+  return s;
+}
+function drawSortCanvas(cvId,steps,idx,color){
+  const cv=document.getElementById(cvId);if(!cv)return;cv.width=cv.offsetWidth||500;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const st=steps[idx],n=st.a.length,mx=Math.max(...st.a);
+  const bw=Math.floor((cv.width-20)/n)-2;
+  st.a.forEach((v,i)=>{
+    const h=Math.floor((v/mx)*(cv.height-28));const x=10+i*(bw+2),y=cv.height-h-5;
+    let fc=color+'28';
+    if(st.cmp&&st.cmp.includes(i))fc=st.sw?'#ff4444cc':color;
+    if(st.done&&st.done.includes(i))fc='#22c55e88';
+    if(st.finished)fc='#22c55e';
+    ctx.fillStyle=fc;ctx.fillRect(x,y,bw,h);
+    ctx.strokeStyle=color+'33';ctx.lineWidth=1;ctx.strokeRect(x,y,bw,h);
+    if(bw>16){ctx.fillStyle='#446688';ctx.font='8px JetBrains Mono,monospace';ctx.textAlign='center';ctx.fillText(v,x+bw/2,cv.height-2);}
+  });
+}
+function setupSortViz(id,color,bodyId,ctrlsId,msgId,cvId){
+  const arr=[42,28,55,8,15,73,19,47,62,33,88,11];
+  mkCanvas(bodyId,cvId,150);
+  const steps=genSortSteps(id,arr);
+  const state={steps,idx:0,playing:false};
+  drawSortCanvas(cvId,steps,0,color);
+  const lbl=i=>{const s=steps[i];if(s.finished)return`<span style="color:#22c55e">✓ Sorted!</span> ${steps.length} total steps.`;return`Step <span>${i}</span>/${steps.length-1} — ${s.sw?'🔄 Swapped elements '+s.cmp.join(' & '):'🔍 Comparing indices '+s.cmp.join(' vs ')}`; };
+  document.getElementById(msgId).innerHTML=lbl(0);
+  mkCtrls(ctrlsId,msgId,state,i=>{drawSortCanvas(cvId,steps,i,color);},lbl,cvId+'spd');
+}
+
+// ── GRAPH VIZ ──
+const GN=[{id:0,x:0.5,y:0.07},{id:1,x:0.2,y:0.3},{id:2,x:0.8,y:0.3},{id:3,x:0.08,y:0.65},{id:4,x:0.35,y:0.65},{id:5,x:0.65,y:0.65},{id:6,x:0.92,y:0.65}];
+const GE=[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]];
+const GA=Array.from({length:7},()=>[]);
+GE.forEach(([a,b])=>{GA[a].push(b);GA[b].push(a);});
+function genGraphSteps(id){
+  const s=[];
+  if(id==='bfs'){const vis=new Set(),q=[0],inQ=new Set([0]),ord=[];while(q.length){const n=q.shift();inQ.delete(n);vis.add(n);ord.push(n);GA[n].forEach(nb=>{if(!vis.has(nb)&&!inQ.has(nb)){q.push(nb);inQ.add(nb);}});s.push({vis:new Set(vis),cur:n,inQ:new Set(inQ),ord:[...ord],lbl:`Dequeue node ${n} → Visit. Queue: [${q}]`});}}
+  else if(id==='dfs'){const vis=new Set(),st=[0],inS=new Set([0]),ord=[];while(st.length){const n=st.pop();if(vis.has(n))continue;inS.delete(n);vis.add(n);ord.push(n);[...GA[n]].reverse().forEach(nb=>{if(!vis.has(nb)){st.push(nb);inS.add(nb);}});s.push({vis:new Set(vis),cur:n,inQ:new Set(inS),ord:[...ord],lbl:`Pop node ${n} → Visit. Stack: [${st.slice(-4)}]`});}}
+  else if(id==='dijkstra'){const dist=[0,Infinity,Infinity,Infinity,Infinity,Infinity,Infinity],vis=new Set(),ord=[];for(let step=0;step<7;step++){let u=-1;dist.forEach((d,i)=>{if(!vis.has(i)&&(u===-1||d<dist[u]))u=i;});if(u===-1||dist[u]===Infinity)break;vis.add(u);ord.push(u);GA[u].forEach(v=>{if(dist[u]+1<dist[v])dist[v]=dist[u]+1;});s.push({vis:new Set(vis),cur:u,inQ:new Set(),ord:[...ord],dist:[...dist],lbl:`Process node ${u}: dist=${dist[u]} | Relaxed neighbors`});}}
+  else if(id==='topo'){const inDeg=Array(7).fill(0);GE.forEach(([a,b])=>inDeg[b]++);const q=GN.filter(n=>inDeg[n.id]===0).map(n=>n.id),res=[],vis=new Set();while(q.length){const u=q.shift();res.push(u);vis.add(u);GA[u].forEach(v=>{inDeg[v]--;if(inDeg[v]===0)q.push(v);});s.push({vis:new Set(vis),cur:u,inQ:new Set(q),ord:[...res],lbl:`Enqueue node ${u} to topo order. Next queue: [${q}]`});}}
+  else if(id==='kruskal'){const par=Array.from({length:7},(_,i)=>i);const find=x=>par[x]===x?x:par[x]=find(par[x]);const union=(a,b)=>{par[find(a)]=find(b);};const mst=[],vis=new Set();const edges=[...GE].sort(()=>0.5-Math.random());edges.forEach(([a,b])=>{const merge=find(a)!==find(b);if(merge){union(a,b);mst.push([a,b]);vis.add(a);vis.add(b);}s.push({vis:new Set(vis),cur:-1,inQ:new Set(),ord:mst.map(e=>e.join('→')),mst:[...mst],lbl:`Edge ${a}–${b}: ${merge?'✓ Added to MST':'✗ Skip (would form cycle)'}`});});}
+  if(!s.length)s.push({vis:new Set(),cur:-1,inQ:new Set(),ord:[],lbl:'Done.'});
+  return s;
+}
+function drawGraphCanvas(cvId,steps,idx,color){
+  const cv=document.getElementById(cvId);if(!cv)return;cv.width=cv.offsetWidth||500;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const st=steps[idx];
+  const np=n=>{const pad=26;return{x:pad+n.x*(cv.width-pad*2),y:pad+n.y*(cv.height-pad*2)};};
+  GE.forEach(([a,b])=>{const pa=np(GN[a]),pb=np(GN[b]);const both=st.vis.has(a)&&st.vis.has(b);const inMST=st.mst&&st.mst.some(e=>(e[0]===a&&e[1]===b)||(e[0]===b&&e[1]===a));ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.strokeStyle=inMST?color+'bb':both?color+'44':'#112244';ctx.lineWidth=inMST?3:1.5;ctx.stroke();});
+  GN.forEach(n=>{const p=np(n);let fill='#0b1422',stroke='#0f2040',tc='#223355';if(st.cur===n.id){fill=color;stroke=color;tc='#000';}else if(st.vis.has(n.id)){fill=color+'20';stroke=color+'77';tc=color;}else if(st.inQ.has(n.id)){fill='#0a1a0a';stroke='#00ff88';tc='#00ff88';}if(st.cur===n.id){ctx.shadowBlur=16;ctx.shadowColor=color;}ctx.beginPath();ctx.arc(p.x,p.y,15,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=tc;ctx.font='bold 11px JetBrains Mono,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.id,p.x,p.y);if(st.dist){const d=st.dist[n.id];ctx.fillStyle='#335566';ctx.font='9px monospace';ctx.fillText(d===Infinity?'∞':d,p.x,p.y-22);}});
+}
+function setupGraphViz(id,color,bodyId,ctrlsId,msgId,cvId){
+  mkCanvas(bodyId,cvId,195);
+  const steps=genGraphSteps(id);const state={steps,idx:0,playing:false};
+  drawGraphCanvas(cvId,steps,0,color);
+  const lbl=i=>steps[i].lbl;document.getElementById(msgId).innerHTML=lbl(0);
+  mkCtrls(ctrlsId,msgId,state,i=>drawGraphCanvas(cvId,steps,i,color),lbl,cvId+'spd');
+}
+
+// ── SEARCH VIZ ──
+const SARR=[3,9,16,21,27,38,43,47,54,65,72,82];const STARGET=47;
+function genSearchSteps(id){
+  const s=[],arr=SARR,t=STARGET;
+  if(id==='linear'){for(let i=0;i<arr.length;i++){s.push({arr,idx:i,found:arr[i]===t,range:[],lbl:`Check index ${i}: arr[${i}]=${arr[i]} ${arr[i]===t?'== '+t+' ✓':'≠ '+t}`});if(arr[i]===t)break;}}
+  else if(id==='binary'){let lo=0,hi=arr.length-1;while(lo<=hi){const mid=Math.floor((lo+hi)/2);s.push({arr,idx:mid,found:arr[mid]===t,range:[lo,hi],lbl:`lo=${lo} hi=${hi} mid=${mid} | arr[${mid}]=${arr[mid]} ${arr[mid]===t?'== '+t+' ✓':arr[mid]<t?'< target → go right':'> target → go left'}`});if(arr[mid]===t)break;if(arr[mid]<t)lo=mid+1;else hi=mid-1;}}
+  else if(id==='jump'){const step=Math.floor(Math.sqrt(arr.length));let prev=0,i=step;while(i<arr.length&&arr[i]<=t){s.push({arr,idx:i,found:false,range:[prev,i],lbl:`Jump to ${i}: arr[${i}]=${arr[i]} ${arr[i]<t?'< target, jump again':'passed target, search back from '+prev}`});prev=i;i+=step;}for(let j=prev;j<=Math.min(i,arr.length-1);j++){s.push({arr,idx:j,found:arr[j]===t,range:[prev,Math.min(i,arr.length-1)],lbl:`Linear check ${j}: arr[${j}]=${arr[j]} ${arr[j]===t?'== '+t+' ✓':'≠ '+t}`});if(arr[j]===t)break;}}
+  else if(id==='interpolation'){let lo=0,hi=arr.length-1;while(lo<=hi&&t>=arr[lo]&&t<=arr[hi]){const pos=lo+Math.floor(((t-arr[lo])/(arr[hi]-arr[lo]))*(hi-lo));s.push({arr,idx:pos,found:arr[pos]===t,range:[lo,hi],lbl:`Estimated pos=${pos}: arr[${pos}]=${arr[pos]} ${arr[pos]===t?'== '+t+' ✓':arr[pos]<t?'< target → lo='+(pos+1):'> target → hi='+(pos-1)}`});if(arr[pos]===t)break;if(arr[pos]<t)lo=pos+1;else hi=pos-1;}}
+  return s;
+}
+function drawSearchCanvas(cvId,steps,idx,color){
+  const cv=document.getElementById(cvId);if(!cv)return;cv.width=cv.offsetWidth||500;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const st=steps[idx],n=st.arr.length;const bw=Math.floor((cv.width-30)/n)-2;
+  ctx.fillStyle=color;ctx.font='bold 11px JetBrains Mono,monospace';ctx.textAlign='left';ctx.fillText('Target: '+STARGET,10,14);
+  st.arr.forEach((v,i)=>{
+    const x=14+i*(bw+2),y=24;let fc='#0b1422',sc='#0f2040';
+    if(st.range.length===2&&i>=st.range[0]&&i<=st.range[1]){fc='#0a1828';sc='#1a3050';}
+    if(i===st.idx){fc=st.found?'#22c55e':color;sc=st.found?'#22c55e':color;}
+    if(st.found&&i===st.idx){ctx.shadowBlur=14;ctx.shadowColor='#22c55e';}
+    ctx.fillStyle=fc;ctx.fillRect(x,y,bw,60);ctx.strokeStyle=sc;ctx.lineWidth=2;ctx.strokeRect(x,y,bw,60);ctx.shadowBlur=0;
+    ctx.fillStyle=i===st.idx?(st.found?'#000':'#000'):'#334466';ctx.font='bold 10px JetBrains Mono,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(v,x+bw/2,y+30);
+    ctx.fillStyle='#223344';ctx.font='8px monospace';ctx.fillText(i,x+bw/2,y+52);
+  });
+}
+function setupSearchViz(id,color,bodyId,ctrlsId,msgId,cvId){
+  mkCanvas(bodyId,cvId,100);const steps=genSearchSteps(id);const state={steps,idx:0,playing:false};
+  drawSearchCanvas(cvId,steps,0,color);const lbl=i=>steps[i].lbl;document.getElementById(msgId).innerHTML=lbl(0);
+  mkCtrls(ctrlsId,msgId,state,i=>drawSearchCanvas(cvId,steps,i,color),lbl,cvId+'spd');
+}
+
+// ── TREE VIZ ──
+function genTreeSteps(id){
+  const s=[];
+  if(id==='bst'){const vals=[50,30,70,20,40,60,80,10,25];let root=null;const ins=(r,v)=>{if(!r)return{val:v,left:null,right:null};if(v<r.val)r.left=ins(r.left,v);else r.right=ins(r.right,v);return r;};vals.forEach(v=>{root=ins(JSON.parse(JSON.stringify(root||null)),v);s.push({root:JSON.parse(JSON.stringify(root)),hl:v,lbl:`Inserted ${v} → BST property maintained`});});}
+  else if(id==='inorder'){let root=null;const ins=(r,v)=>{if(!r)return{val:v,left:null,right:null};if(v<r.val)r.left=ins(r.left,v);else r.right=ins(r.right,v);return r;};[50,30,70,20,40,60,80].forEach(v=>root=ins(root,v));const ord=[];const io=n=>{if(!n)return;io(n.left);ord.push(n.val);s.push({root:JSON.parse(JSON.stringify(root)),hl:n.val,visitOrder:[...ord],lbl:`Visit ${n.val} → Inorder so far: [${ord}]`});io(n.right);};io(root);}
+  else if(id==='levelorder'){let root=null;const ins=(r,v)=>{if(!r)return{val:v,left:null,right:null};if(v<r.val)r.left=ins(r.left,v);else r.right=ins(r.right,v);return r;};[50,30,70,20,40,60,80].forEach(v=>root=ins(root,v));const q=[root],vis=[];while(q.length){const nd=q.shift();vis.push(nd.val);if(nd.left)q.push(nd.left);if(nd.right)q.push(nd.right);s.push({root:JSON.parse(JSON.stringify(root)),hl:nd.val,visitOrder:[...vis],lbl:`Visit ${nd.val} → Level order: [${vis}]`});}}
+  else if(id==='heap_tree'){const heap=[];const bubbleUp=(a,i)=>{while(i>0){const p=Math.floor((i-1)/2);if(a[p]<a[i]){[a[p],a[i]]=[a[i],a[p]];i=p;}else break;}};[40,20,60,10,30,50,70,5,15].forEach(v=>{heap.push(v);bubbleUp(heap,heap.length-1);s.push({heap:[...heap],hl:v,lbl:`Insert ${v} → Bubble up → Heap: [${heap}]`});});}
+  return s;
+}
+function drawTreeCanvas(cvId,steps,idx,color,id){
+  const cv=document.getElementById(cvId);if(!cv)return;cv.width=cv.offsetWidth||500;
+  const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
+  const st=steps[idx];
+  if(id==='heap_tree'&&st.heap){
+    const h=st.heap,n=h.length;const bw=Math.min(36,Math.floor((cv.width-30)/Math.max(n,1))-2);
+    h.forEach((v,i)=>{const x=14+i*(bw+2),y=cv.height-50;ctx.fillStyle=v===st.hl?color+'44':'#0b1422';ctx.fillRect(x,y,bw,30);ctx.strokeStyle=v===st.hl?color:'#0f2040';ctx.lineWidth=1.5;ctx.strokeRect(x,y,bw,30);ctx.fillStyle=v===st.hl?color:'#334466';ctx.font='bold 10px JetBrains Mono,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(v,x+bw/2,y+15);});
+    ctx.fillStyle='#223344';ctx.font='9px monospace';ctx.textAlign='left';ctx.fillText('Heap array:',14,cv.height-58);
+    function dn(i,x,y,xo){if(i>=h.length)return;const l=2*i+1,r=2*i+2;if(l<h.length){const cx=x-xo,cy=y+42;ctx.beginPath();ctx.moveTo(x,y+13);ctx.lineTo(cx,cy-13);ctx.strokeStyle='#112244';ctx.lineWidth=1.5;ctx.stroke();dn(l,cx,cy,xo/2);}if(r<h.length){const cx=x+xo,cy=y+42;ctx.beginPath();ctx.moveTo(x,y+13);ctx.lineTo(cx,cy-13);ctx.strokeStyle='#112244';ctx.lineWidth=1.5;ctx.stroke();dn(r,cx,cy,xo/2);}const hl=h[i]===st.hl;if(hl){ctx.shadowBlur=14;ctx.shadowColor=color;}ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle=hl?color:h[i]===h[0]?color+'33':'#0b1422';ctx.fill();ctx.strokeStyle=hl?color:h[i]===h[0]?color+'88':'#0f2040';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=hl?'#000':color;ctx.font='bold 10px JetBrains Mono,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(h[i],x,y);}
+    dn(0,cv.width/2,18,cv.width/4.5);return;
+  }
+  if(!st.root)return;
+  function dn(node,x,y,xo){if(!node)return;if(node.left){const cx=x-xo,cy=y+46;ctx.beginPath();ctx.moveTo(x,y+13);ctx.lineTo(cx,cy-13);ctx.strokeStyle='#112244';ctx.lineWidth=1.5;ctx.stroke();dn(node.left,cx,cy,xo*.55);}if(node.right){const cx=x+xo,cy=y+46;ctx.beginPath();ctx.moveTo(x,y+13);ctx.lineTo(cx,cy-13);ctx.strokeStyle='#112244';ctx.lineWidth=1.5;ctx.stroke();dn(node.right,cx,cy,xo*.55);}const hl=node.val===st.hl;const inVis=st.visitOrder&&st.visitOrder.includes(node.val);if(hl){ctx.shadowBlur=14;ctx.shadowColor=color;}ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle=hl?color:inVis?color+'28':'#0b1422';ctx.fill();ctx.strokeStyle=hl?color:inVis?color+'77':'#0f2040';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=hl?'#000':inVis?color:'#334466';ctx.font='bold 10px JetBrains Mono,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(node.val,x,y);}
+  dn(st.root,cv.width/2,16,cv.width/4.2);
+}
+function setupTreeViz(id,color,bodyId,ctrlsId,msgId,cvId){
+  mkCanvas(bodyId,cvId,190);const steps=genTreeSteps(id);const state={steps,idx:0,playing:false};
+  drawTreeCanvas(cvId,steps,0,color,id);const lbl=i=>steps[i].lbl;document.getElementById(msgId).innerHTML=lbl(0);
+  mkCtrls(ctrlsId,msgId,state,i=>drawTreeCanvas(cvId,steps,i,color,id),lbl,cvId+'spd');
+}
+
+// ══════════════════════════════════════════════
+// RACE SYSTEM
+// ══════════════════════════════════════════════
+let raceCat='sort',raceSelA=null,raceSelB=null,raceTimer=null;
+const RACE_CATS={
+  sort:['bubble','selection','insertion','merge','quick','heap'],
+  search:['linear','binary','jump','interpolation'],
+  graph:['bfs','dfs','dijkstra','topo','kruskal'],
+};
+
+function setRaceCat(cat){
+  raceCat=cat;raceSelA=null;raceSelB=null;
+  document.querySelectorAll('.rcat-tab').forEach(t=>t.classList.toggle('active',t.dataset.rcat===cat));
+  buildPickers();resetRace();
+}
+
+function buildPickers(){
+  const ids=RACE_CATS[raceCat];
+  ['pickA','pickB'].forEach((pid,si)=>{
+    const div=document.getElementById(pid);div.innerHTML='';
+    ids.forEach(id=>{
+      const algo=ALGOS[raceCat].find(a=>a.id===id);
+      const item=document.createElement('div');item.className='pick-item';item.dataset.id=id;
+      item.textContent=algo.name+' — '+algo.time;
+      item.onclick=()=>{
+        const sel=si===0?'raceSelA':'raceSelB';
+        window[sel]=id;
+        document.querySelectorAll(`#${pid} .pick-item`).forEach(el=>el.classList.remove('selected-a','selected-b'));
+        item.classList.add(si===0?'selected-a':'selected-b');
+        if(si===0)raceSelA=id;else raceSelB=id;
+        updateRaceNames();
+      };
+      div.appendChild(item);
+    });
+  });
+}
+
+function updateRaceNames(){
+  const an=raceSelA?ALGOS[raceCat].find(a=>a.id===raceSelA).name:'—';
+  const bn=raceSelB?ALGOS[raceCat].find(a=>a.id===raceSelB).name:'—';
+  document.getElementById('racerNameA').textContent=an;
+  document.getElementById('racerNameB').textContent=bn;
+  document.getElementById('rPanelA').textContent=an;
+  document.getElementById('rPanelB').textContent=bn;
+}
+
+function resetRace(){
+  clearInterval(raceTimer);raceTimer=null;
+  document.getElementById('progA').style.width='0%';
+  document.getElementById('progB').style.width='0%';
+  document.getElementById('racerStepsA').textContent='0 steps';
+  document.getElementById('racerStepsB').textContent='0 steps';
+  document.getElementById('rorderA').innerHTML='';
+  document.getElementById('rorderB').innerHTML='';
+  document.getElementById('rlogA').textContent='—';
+  document.getElementById('rlogB').textContent='—';
+  document.getElementById('winnerStrip').style.display='none';
+  document.getElementById('cmpTable').style.display='none';
+  document.getElementById('raceLaunchBtn').disabled=false;
+  const cvA=document.getElementById('rcvA'),cvB=document.getElementById('rcvB');
+  if(cvA){const ctx=cvA.getContext('2d');ctx.clearRect(0,0,cvA.width,cvA.height);}
+  if(cvB){const ctx=cvB.getContext('2d');ctx.clearRect(0,0,cvB.width,cvB.height);}
+}
+
+function launchRace(){
+  if(!raceSelA||!raceSelB){alert('Please select Algorithm A and Algorithm B!');return;}
+  if(raceSelA===raceSelB){alert('Please select two different algorithms!');return;}
+  resetRace();document.getElementById('raceLaunchBtn').disabled=true;
+
+  const colorA='#ff6080',colorB='#00e5ff';
+  const algoA=ALGOS[raceCat].find(a=>a.id===raceSelA);
+  const algoB=ALGOS[raceCat].find(a=>a.id===raceSelB);
+
+  // Generate steps for both
+  let stepsA,stepsB,drawA,drawB,totalA,totalB;
+
+  if(raceCat==='sort'){
+    const arr=[42,28,55,8,15,73,19,47,62,33,88,11];
+    stepsA=genSortSteps(raceSelA,arr);stepsB=genSortSteps(raceSelB,arr);
+    totalA=stepsA.length;totalB=stepsB.length;
+    // init canvases
+    const cvA=document.getElementById('rcvA'),cvB=document.getElementById('rcvB');
+    cvA.width=cvA.offsetWidth||400;cvB.width=cvB.offsetWidth||400;
+    drawA=i=>drawSortCanvas('rcvA',stepsA,Math.min(i,stepsA.length-1),colorA);
+    drawB=i=>drawSortCanvas('rcvB',stepsB,Math.min(i,stepsB.length-1),colorB);
+  } else if(raceCat==='search'){
+    stepsA=genSearchSteps(raceSelA);stepsB=genSearchSteps(raceSelB);
+    totalA=stepsA.length;totalB=stepsB.length;
+    drawA=i=>drawSearchCanvas('rcvA',stepsA,Math.min(i,stepsA.length-1),colorA);
+    drawB=i=>drawSearchCanvas('rcvB',stepsB,Math.min(i,stepsB.length-1),colorB);
+  } else if(raceCat==='graph'){
+    stepsA=genGraphSteps(raceSelA);stepsB=genGraphSteps(raceSelB);
+    totalA=stepsA.length;totalB=stepsB.length;
+    drawA=i=>drawGraphCanvas('rcvA',stepsA,Math.min(i,stepsA.length-1),colorA);
+    drawB=i=>drawGraphCanvas('rcvB',stepsB,Math.min(i,stepsB.length-1),colorB);
+  }
+
+  drawA(0);drawB(0);
+
+  let idxA=0,idxB=0,doneA=false,doneB=false,finA=null,finB=null,tick=0;
+
+  function runTick(){
+    tick++;
+    if(!doneA&&idxA<totalA-1){idxA++;drawA(idxA);const s=stepsA[idxA];document.getElementById('progA').style.width=`${(idxA/(totalA-1))*100}%`;document.getElementById('racerStepsA').textContent=idxA+' steps';document.getElementById('rlogA').textContent=s.lbl||s.label||'';if(s.ord)document.getElementById('rorderA').innerHTML=s.ord.slice(-10).map(v=>`<div class="rnode rnode-a">${v}</div>`).join('');}
+    else if(!doneA){doneA=true;finA=tick;document.getElementById('progA').style.width='100%';}
+
+    if(!doneB&&idxB<totalB-1){idxB++;drawB(idxB);const s=stepsB[idxB];document.getElementById('progB').style.width=`${(idxB/(totalB-1))*100}%`;document.getElementById('racerStepsB').textContent=idxB+' steps';document.getElementById('rlogB').textContent=s.lbl||s.label||'';if(s.ord)document.getElementById('rorderB').innerHTML=s.ord.slice(-10).map(v=>`<div class="rnode rnode-b">${v}</div>`).join('');}
+    else if(!doneB){doneB=true;finB=tick;document.getElementById('progB').style.width='100%';}
+
+    if(doneA&&doneB){
+      clearInterval(raceTimer);
+      showRaceWinner(algoA,algoB,totalA,totalB,finA,finB,colorA,colorB);
+      showCmpTable(algoA,algoB);
+      return;
+    }
+    const spd=1000-(document.getElementById('raceSpd')?+document.getElementById('raceSpd').value:500);
+    raceTimer=setTimeout(runTick,spd);
+  }
+  const spd=1000-(document.getElementById('raceSpd')?+document.getElementById('raceSpd').value:500);
+  raceTimer=setTimeout(runTick,spd);
+}
+
+function showRaceWinner(algoA,algoB,totalA,totalB,finA,finB,colorA,colorB){
+  const ws=document.getElementById('winnerStrip');
+  if(totalA<totalB){ws.textContent=`🏆 ${algoA.name} WINS! ${totalA} steps vs ${totalB} steps`;ws.className='winner-strip win-a';}
+  else if(totalB<totalA){ws.textContent=`🏆 ${algoB.name} WINS! ${totalB} steps vs ${totalA} steps`;ws.className='winner-strip win-b';}
+  else{ws.textContent=`🤝 TIE! Both took ${totalA} steps`;ws.className='winner-strip win-tie';}
+  ws.style.display='block';
+}
+
+function showCmpTable(a,b){
+  const tbl=document.getElementById('cmpTable'),grid=document.getElementById('cmpGrid');
+  grid.innerHTML=`
+    <div class="cmp-cell hdr">Algorithm</div>
+    <div class="cmp-cell hdr">Avg Time</div>
+    <div class="cmp-cell hdr">Best Time</div>
+    <div class="cmp-cell hdr">Space</div>
+    <div class="cmp-cell hdr">Stable</div>
+    <div class="cmp-cell name a-row">${a.name}</div>
+    <div class="cmp-cell a-row">${a.time}</div>
+    <div class="cmp-cell a-row">${a.best}</div>
+    <div class="cmp-cell a-row">${a.space}</div>
+    <div class="cmp-cell a-row">${a.stable}</div>
+    <div class="cmp-cell name b-row">${b.name}</div>
+    <div class="cmp-cell b-row">${b.time}</div>
+    <div class="cmp-cell b-row">${b.best}</div>
+    <div class="cmp-cell b-row">${b.space}</div>
+    <div class="cmp-cell b-row">${b.stable}</div>
+    <div class="cmp-cell" style="grid-column:span 5;padding:10px 12px;font-size:0.6rem;color:var(--muted);border-bottom:none">
+      <strong style="color:var(--text)">${a.name}:</strong> ${a.short}<br><br>
+      <strong style="color:var(--text)">${b.name}:</strong> ${b.short}
+    </div>`;
+  tbl.style.display='block';
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+buildAllCards();
+buildPickers();
+
+window.addEventListener('resize',()=>{});
+</script>
+</body>
+</html>
